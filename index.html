@@ -10,10 +10,13 @@
     body { 
       background-color: #000;
       color: #fff;
+      font-family: Helvetica, sans-serif;
     }
+
     #map { 
-      background-color: rgb(0, 0, 0);
+      background-color: #000;
     }
+
     button { 
       border: 1px solid #fff;
       color: #fff;
@@ -35,13 +38,33 @@
 
     .country:hover { 
       stroke-width: 1.24px;
+      cursor: pointer;
     }
+
+    #tooltip { 
+      padding: 8px 16px;
+      min-width: 124px;
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      background-color: #fff;
+      color: #000;
+      border-radius: 4px;
+    }
+
+    #map-wrapper { 
+      position: relative;
+    }
+
+    
   </style>
 </head>
 <body>
   <div id="buttons"> </div>
-  <div id="map"></div>
-
+  <div id="map-wrapper"> 
+    <div id="map"></div>
+    <div id="tooltip"></div>
+  </div>
   <script> 
     /** Renders our map */
     async function createMap(start, end) { 
@@ -54,8 +77,7 @@
         .attr('width', width)
         .attr('height', height);
       const colorScale = d3.scaleSequential(d3.interpolateGreens)
-      const tooltip = d3.select('body').append('div')
-        .attr('class', 'tooltip');
+      const tooltip = d3.select('#tooltip');
 
       // get our data 
       const imo_data = await d3.csv('country_imo_results.csv');
@@ -82,6 +104,9 @@
       
       // imo data => get total medal count per country 
       let medalCountMap = new Map();
+      let bronzes = new Map();
+      let silvers = new Map();
+      let golds = new Map();
       function count(start, end) {
         medalCountMap = new Map();
         imo_data.forEach(d => { 
@@ -89,6 +114,9 @@
             const country = d.country;
             const medals = +d.awards_gold + +d.awards_silver + +d.awards_bronze;
             medalCountMap.set(country, (medalCountMap.get(country) || 0 ) + medals);
+            bronzes.set(country, (bronzes.get(country) || 0 ) + +d.awards_bronze);
+            silvers.set(country, (silvers.get(country) || 0 ) + +d.awards_silver);
+            golds.set(country, (golds.get(country) || 0 ) + +d.awards_gold);
           }
         })
         console.log(medalCountMap)
@@ -112,6 +140,20 @@
             const medalCount = medalCountMap.get(d.properties.name);
             return medalCount ? colorScale(medalCount) : '#ccc';
           })
+          .on('mouseover', (event, d) => { 
+            const name = d.properties.name
+            const gold = golds.get(name) || 0;
+            const silver = golds.get(name) || 0;
+            const bronze = golds.get(name) || 0;
+            tooltip.html(`<strong> ${name} </strong> <br>
+              Gold: ${gold} <br> 
+              Silver: ${silver} <br> 
+              Bronze: ${bronze}`)
+              .style('left', (event.pageX + 8) + "px")
+              .style('top', (event.pageY - 8) + "px")
+              .style('opacity', 1);
+          })
+          .on('mouseout', () => tooltip.style('opacity', 0))
         }
         render();
     }
