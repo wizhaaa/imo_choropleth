@@ -7,17 +7,34 @@
   <script src="https://d3js.org/d3.v7.min.js"></script> 
   <script src="https://d3js.org/topojson.v3.min.js"></script>
   <style> 
+    body { 
+      background-color: #000;
+      color: #fff;
+    }
+    #map { 
+      background-color: rgb(0, 0, 0);
+    }
     button { 
-      border: 1px solid black;
+      border: 1px solid #fff;
+      color: #fff;
       background: none;
       padding: 10px 16px;
       cursor: pointer;
     }
 
     button:hover { 
-      background: black;
-      color: white;
+      background: #fff;
+      color: #000;
       font-weight: 700;
+    }
+
+    .country { 
+      stroke: #fff;
+      stroke-width: 0.16px;;
+    }
+
+    .country:hover { 
+      stroke-width: 1.24px;
     }
   </style>
 </head>
@@ -36,7 +53,7 @@
         .append('svg')
         .attr('width', width)
         .attr('height', height);
-      const colorScale = d3.scaleSequential(d3.interpolatePurples)
+      const colorScale = d3.scaleSequential(d3.interpolateGreens)
       const tooltip = d3.select('body').append('div')
         .attr('class', 'tooltip');
 
@@ -99,7 +116,7 @@
         render();
     }
     
-    createMap();
+    createMap(1959, 2025);
     const decades = [
             { label: "1960s", start: 1960, end: 1969 },
             { label: "1970s", start: 1970, end: 1979 },
