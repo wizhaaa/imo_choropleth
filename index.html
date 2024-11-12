@@ -82,6 +82,7 @@
       // get our data 
       const imo_data = await d3.csv('country_imo_results.csv');
       const world_data = await d3.json('countries-110m.json');
+      const edu_spending = await d3.csv('education_spending.csv');
 
       // clean our data
       imo_data.forEach(d=> {
@@ -94,6 +95,20 @@
         else if (d.country === "Republic of Moldova") d.country = 'Moldova';
         else if (d.country === "North Macedonia") d.country = 'Macedonia';
         else if (d.country === "Republic of Korea") d.country = 'South Korea';
+      })
+
+      edu_spending.forEach(d=> {
+        if (d.country === "People's Republic of China") d.country = 'China'; 
+        else if (d.country === "Russian Federation") d.country = 'Russia';
+        else if (d.country === "Islamic Republic of Iran") d.country = 'Iran';
+        else if (d.country === "Türkiye") d.country = 'Turkey';
+        else if (d.country === "Czech Republic") d.country = 'Czechia';
+        else if (d.country === "Bosnia and Herzegovina") d.country = 'Bosnia and Herz.';
+        else if (d.country === "Republic of Moldova") d.country = 'Moldova';
+        else if (d.country === "North Macedonia") d.country = 'Macedonia';
+        else if (d.country === "Republic of Korea") d.country = 'South Korea';
+        else if (d.country === "United States") d.country = 'United States of America';
+
       })
       
       const countries = topojson.feature(world_data, world_data.objects.countries);
@@ -119,7 +134,6 @@
             golds.set(country, (golds.get(country) || 0 ) + +d.awards_gold);
           }
         })
-        console.log(medalCountMap)
         // max medal count 
         const maxMedalCount = Math.max(...medalCountMap.values());
         console.log(maxMedalCount); 
@@ -128,6 +142,21 @@
 
       }
       count(start, end);
+
+      // handle our education spending
+      // country | year (1960 - 2023) 
+      const country_spending = new Map();
+      edu_spending.forEach(d => { 
+        let total_percentage = 0;
+        let non_nulls = 0;
+        for (let i = start; i<= end; i++) { 
+          if (d[i]) non_nulls += 1
+          total_percentage += (+d[i] || 0)
+        }
+        const average = (total_percentage / non_nulls).toFixed(2);
+        country_spending.set(d.country, average);
+      })
+
 
       function render() { 
         svg.selectAll('path')
@@ -145,10 +174,12 @@
             const gold = golds.get(name) || 0;
             const silver = golds.get(name) || 0;
             const bronze = golds.get(name) || 0;
+            const spending = country_spending.get(name) || 'N/A';
             tooltip.html(`<strong> ${name} </strong> <br>
               Gold: ${gold} <br> 
               Silver: ${silver} <br> 
-              Bronze: ${bronze}`)
+              Bronze: ${bronze} <br> 
+              Education Expenditure (%GDP): ${spending}`)
               .style('left', (event.pageX + 8) + "px")
               .style('top', (event.pageY - 8) + "px")
               .style('opacity', 1);
