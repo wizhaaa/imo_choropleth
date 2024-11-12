@@ -12,8 +12,8 @@
 
   <script> 
     async function createMap() { 
-      const width = 960;
-      const height = 500;
+      const width = 1440;
+      const height = 900;
 
       const svg = d3.select('#map')
         .append('svg')
@@ -30,7 +30,7 @@
       console.log(world_data)
       const countries = topojson.feature(world_data, world_data.objects.countries);
 
-      const projection = d3.geoMercator().fitSize([960, 550], countries);
+      const projection = d3.geoMercator().fitSize([width, height], countries);
       console.log('projection', projection)
       
       const path = d3.geoPath().projection(projection);
