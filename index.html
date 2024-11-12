@@ -20,21 +20,34 @@
         .attr('width', width)
         .attr('height', height);
       
-      
       const colorScale = d3.scaleSequential(d3.interpolateYlOrRd).domain([0, 100]);
       const tooltip = d3.select('body').append('div')
         .attr('class', 'tooltip');
 
       const imo_data = await d3.csv('country_imo_results.csv');
       const world_data = await d3.json('countries-110m.json');
-      console.log(world_data)
+
+      
+      imo_data.forEach(d=> {
+        if (d.country === "People's Republic of China") d.country = 'China'; 
+        else if (d.country === "Russian Federation") d.country = 'Russia';
+        else if (d.country === "Islamic Republic of Iran") d.country = 'Iran';
+        else if (d.country === "Türkiye") d.country = 'Turkey';
+        else if (d.country === "Czech Republic") d.country = 'Czechia';
+        else if (d.country === "Bosnia and Herzegovina") d.country = 'Bosnia and Herz.';
+        else if (d.country === "Republic of Moldova") d.country = 'Moldova';
+        else if (d.country === "North Macedonia") d.country = 'Macedonia';
+        else if (d.country === "Republic of Korea") d.country = 'South Korea';
+
+      })
+      
+      
+      
       const countries = topojson.feature(world_data, world_data.objects.countries);
 
       const projection = d3.geoMercator().fitSize([width, height], countries);
-      console.log('projection', projection)
       
       const path = d3.geoPath().projection(projection);
-      console.log('path', path)
       // imo data => get total medal count per country 
       const medalCountMap = new Map();
       imo_data.forEach(d => { 
