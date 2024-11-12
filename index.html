@@ -6,12 +6,29 @@
   <!-- d3 + topojson -->
   <script src="https://d3js.org/d3.v7.min.js"></script> 
   <script src="https://d3js.org/topojson.v3.min.js"></script>
+  <style> 
+    button { 
+      border: 1px solid black;
+      background: none;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+
+    button:hover { 
+      background: black;
+      color: white;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
+  <div id="buttons"> </div>
   <div id="map"></div>
 
   <script> 
-    async function createMap() { 
+    /** Renders our map */
+    async function createMap(start, end) { 
+
       const width = 1440;
       const height = 900;
 
@@ -19,15 +36,15 @@
         .append('svg')
         .attr('width', width)
         .attr('height', height);
-      
-      const colorScale = d3.scaleSequential(d3.interpolateYlOrRd).domain([0, 100]);
+      const colorScale = d3.scaleSequential(d3.interpolatePurples)
       const tooltip = d3.select('body').append('div')
         .attr('class', 'tooltip');
 
+      // get our data 
       const imo_data = await d3.csv('country_imo_results.csv');
       const world_data = await d3.json('countries-110m.json');
 
-      
+      // clean our data
       imo_data.forEach(d=> {
         if (d.country === "People's Republic of China") d.country = 'China'; 
         else if (d.country === "Russian Federation") d.country = 'Russia';
@@ -38,42 +55,71 @@
         else if (d.country === "Republic of Moldova") d.country = 'Moldova';
         else if (d.country === "North Macedonia") d.country = 'Macedonia';
         else if (d.country === "Republic of Korea") d.country = 'South Korea';
-
       })
-      
-      
       
       const countries = topojson.feature(world_data, world_data.objects.countries);
 
       const projection = d3.geoMercator().fitSize([width, height], countries);
       
       const path = d3.geoPath().projection(projection);
-      // imo data => get total medal count per country 
-      const medalCountMap = new Map();
-      imo_data.forEach(d => { 
-        const country = d.country;
-        const medals = +d.awards_gold + +d.awards_silver + +d.awards_bronze;
-        medalCountMap.set(country, (medalCountMap.get(country) || 0 ) + medals);
-      })
-      // max medal count 
-      const maxMedalCount = Math.max(...medalCountMap.values());
-      colorScale.domain([0, maxMedalCount]);
-      console.log(medalCountMap)
-
-      console.log(countries.features);
-      svg.selectAll('path')
-        .data(countries.features)
-        .enter()
-        .append('path')
-        .attr('d', path)
-        .attr('class', 'country')
-        .attr('fill', d => {
-          const medalCount = medalCountMap.get(d.properties.name);
-          return medalCount ? colorScale(medalCount) : '#ccc';
-        })
       
+      // imo data => get total medal count per country 
+      let medalCountMap = new Map();
+      function count(start, end) {
+        medalCountMap = new Map();
+        imo_data.forEach(d => { 
+          if (d.year >= start && d.year <= end && d.country != "Democratic People's Republic of Korea") { 
+            const country = d.country;
+            const medals = +d.awards_gold + +d.awards_silver + +d.awards_bronze;
+            medalCountMap.set(country, (medalCountMap.get(country) || 0 ) + medals);
+          }
+        })
+        console.log(medalCountMap)
+        // max medal count 
+        const maxMedalCount = Math.max(...medalCountMap.values());
+        console.log(maxMedalCount); 
+        // update our domain for our color scale 
+        colorScale.domain([0, maxMedalCount]);
+
+      }
+      count(start, end);
+
+      function render() { 
+        svg.selectAll('path')
+          .data(countries.features)
+          .enter()
+          .append('path')
+          .attr('d', path)
+          .attr('class', 'country')
+          .attr('fill', d => {
+            const medalCount = medalCountMap.get(d.properties.name);
+            return medalCount ? colorScale(medalCount) : '#ccc';
+          })
+        }
+        render();
     }
+    
     createMap();
+    const decades = [
+            { label: "1960s", start: 1960, end: 1969 },
+            { label: "1970s", start: 1970, end: 1979 },
+            { label: "1980s", start: 1980, end: 1989 },
+            { label: "1990s", start: 1990, end: 1999 },
+            { label: "2000s", start: 2000, end: 2009 },
+            { label: "2010s", start: 2010, end: 2019 },
+            { label: "2020s", start: 2020, end: 2024 }
+        ];
+    const buttonsContainer = d3.select("#buttons");
+    decades.forEach(decade => {
+        buttonsContainer.append("button")
+            .text(decade.label)
+            .on("click", () => {
+                d3.select("#map").html("");
+                console.log(`Rendering map for ${decade.label}`);
+                createMap(decade.start, decade.end);
+            });
+    });
+
   </script>
 
 
