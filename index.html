@@ -73,8 +73,8 @@
 <body>
   <h1>International Math Olympiad Performance and Educational Expenditure by Country</h1>
   <p>Elizabeth Moon (em652), William Zhang (wz282), Jiho Lee (jl4298)</p>
-  <p><i>Filter by decades below and hover over a country to see their gold, silver, and bronze medal count and spending
-      on education as a percentage of their GDP.</i></p>
+  <p><i>Filter by decades below and hover over a country to see its gold, silver, and bronze medal count and spending
+      on education as a percentage of its GDP.</i></p>
   <div id="buttons"></div>
   <div id="selected-decade"></div>
   <div id="map-wrapper">
@@ -82,6 +82,7 @@
     <div id="tooltip"></div>
   </div>
   <script>
+    const selectedDecade = d3.select("#selected-decade");
     /** Renders our map */
     async function createMap(start, end) {
       const width = 1600;
@@ -94,7 +95,6 @@
         .attr("height", height);
       const colorScale = d3.scaleSequential(d3.interpolateGreens);
       const tooltip = d3.select("#tooltip");
-      const selectedDecade = d3.select("#selected-decade");
       selectedDecade.text(`Selected Years: ${start} - ${end}`);
 
       // get our data
@@ -102,33 +102,51 @@
       const world_data = await d3.json("countries-110m.json");
       const edu_spending = await d3.csv("education_spending.csv");
 
+      // map from IMO data country name to world data country name
+      const imo_countries_clean = {
+        "People's Republic of China": "China",
+        "Russian Federation": "Russia",
+        "Islamic Republic of Iran": "Iran",
+        "Türkiye": "Turkey",
+        "Czech Republic": "Czechia",
+        "Bosnia and Herzegovina": "Bosnia and Herz.",
+        "Republic of Moldova": "Moldova",
+        "North Macedonia": "Macedonia",
+        "Republic of Korea": "South Korea",
+        "Democratic People's Republic of Korea": "North Korea",
+      }
+
+      // map from education spending data country name to world data country name
+      const edu_countries_clean = {
+        "People's Republic of China": "China",
+        "Russian Federation": "Russia",
+        "Iran, Islamic Rep.": "Iran",
+        "Turkiye": "Turkey",
+        "Bosnia and Herzegovina": "Bosnia and Herz.",
+        "Republic of Moldova": "Moldova",
+        "North Macedonia": "Macedonia",
+        "Korea, Rep.": "South Korea",
+        "Viet Nam": "Vietnam",
+        "Slovak Republic": "Slovakia",
+        "United States": "United States of America",
+        "Congo, Dem. Rep.": "Dem. Rep. Congo",
+        "Central African Republic": "Central African Rep.",
+        "Congo, Rep.": "Congo",
+        "Lao PDR": "Laos",
+        "Brunei Darussalam": "Brunei",
+        "Egypt, Arab Rep.": "Egypt",
+        "South Sudan": "S. Sudan",
+        "Dominican Republic": "Dominican Rep.",
+        "Venezuela, RB": "Venezuela",
+      }
+
       // clean our data
       imo_data.forEach((d) => {
-        if (d.country === "People's Republic of China") d.country = "China";
-        else if (d.country === "Russian Federation") d.country = "Russia";
-        else if (d.country === "Islamic Republic of Iran") d.country = "Iran";
-        else if (d.country === "Türkiye") d.country = "Turkey";
-        else if (d.country === "Czech Republic") d.country = "Czechia";
-        else if (d.country === "Bosnia and Herzegovina")
-          d.country = "Bosnia and Herz.";
-        else if (d.country === "Republic of Moldova") d.country = "Moldova";
-        else if (d.country === "North Macedonia") d.country = "Macedonia";
-        else if (d.country === "Republic of Korea") d.country = "South Korea";
+        d.country = imo_countries_clean[d.country] || d.country;
       });
 
       edu_spending.forEach((d) => {
-        if (d.country === "People's Republic of China") d.country = "China";
-        else if (d.country === "Russian Federation") d.country = "Russia";
-        else if (d.country === "Islamic Republic of Iran") d.country = "Iran";
-        else if (d.country === "Türkiye") d.country = "Turkey";
-        else if (d.country === "Czech Republic") d.country = "Czechia";
-        else if (d.country === "Bosnia and Herzegovina")
-          d.country = "Bosnia and Herz.";
-        else if (d.country === "Republic of Moldova") d.country = "Moldova";
-        else if (d.country === "North Macedonia") d.country = "Macedonia";
-        else if (d.country === "Republic of Korea") d.country = "South Korea";
-        else if (d.country === "United States")
-          d.country = "United States of America";
+        d.country = edu_countries_clean[d.country] || d.country;
       });
 
       const countries = topojson.feature(
@@ -149,12 +167,11 @@
         imo_data.forEach((d) => {
           if (
             d.year >= start &&
-            d.year <= end &&
-            d.country != "Democratic People's Republic of Korea"
+            d.year <= end
           ) {
             const country = d.country;
             const medals =
-              +d.awards_gold + +d.awards_silver + +d.awards_bronze;
+              (+d.awards_gold + +d.awards_silver + +d.awards_bronze) || 0;
             medalCountMap.set(
               country,
               (medalCountMap.get(country) || 0) + medals
@@ -172,7 +189,6 @@
         });
         // max medal count
         const maxMedalCount = Math.max(...medalCountMap.values());
-        console.log(maxMedalCount);
         // update our domain for our color scale
         colorScale.domain([0, maxMedalCount]);
       }
@@ -188,8 +204,10 @@
           if (d[i]) non_nulls += 1;
           total_percentage += +d[i] || 0;
         }
-        const average = (total_percentage / non_nulls).toFixed(2);
-        country_spending.set(d.country, average);
+        if (non_nulls !== 0) {
+          const average = (total_percentage / non_nulls).toFixed(2);
+          country_spending.set(d.country, average);
+        }
       });
 
       function render() {
@@ -218,8 +236,8 @@
               Bronze 🥉: ${bronze} <br> 
               Education Expenditure (% of GDP): ${spending}`
               )
-              .style("left", event.pageX + "px")
-              .style("top", event.pageY + "px")
+              .style("left", `${event.clientX}px`)
+              .style("top", `${event.clientY}px`)
               .style("opacity", 1);
           })
           .on("mouseout", () => tooltip.style("opacity", 0));
@@ -251,7 +269,6 @@
           d3.select("#map").html("");
           console.log(`Rendering map for ${decade.label}`);
           createMap(decade.start, decade.end);
-          selectedDecade.text(`Selected Decade: ${decade.label}`);
         });
     });
   </script>
