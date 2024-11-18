@@ -1,234 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>World IMO Visual</title>
 
-    <!-- d3 + topojson -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <style>
-      body {
-        background-color: #000;
-        color: #fff;
-        font-family: Helvetica, sans-serif;
-      }
+<head>
+  <title>World IMO Visual</title>
 
-      #map {
-        background-color: #000;
-      }
+  <!-- d3 + topojson -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+  <style>
+    body {
+      font-family: Helvetica, sans-serif;
+      margin-left: 16px;
+    }
 
-      button {
-        border: 1px solid #fff;
-        color: #fff;
-        background: none;
-        padding: 10px 16px;
-        cursor: pointer;
-      }
+    #map {
+      background-color: #fff;
+    }
 
-      button:hover {
-        background: #fff;
-        color: #000;
-        font-weight: 700;
-      }
+    button {
+      border: 1px solid #000;
+      color: #000;
+      background: none;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
 
-      .country {
-        stroke: #fff;
-        stroke-width: 0.16px;
-      }
+    button:hover {
+      background: #fff;
+      color: #000;
+      font-weight: 700;
+    }
 
-      .country:hover {
-        stroke-width: 1.24px;
-        cursor: pointer;
-      }
+    button:active {
+      background: #000;
+      color: #fff;
+    }
 
-      #tooltip {
-        padding: 8px 16px;
-        min-width: 124px;
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-        background-color: #fff;
-        color: #000;
-        border-radius: 4px;
-      }
+    .country {
+      stroke: #000;
+      stroke-width: 0.16px;
+    }
 
-      #map-wrapper {
-        position: relative;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="buttons"></div>
-    <div id="map-wrapper">
-      <div id="map"></div>
-      <div id="tooltip"></div>
-    </div>
-    <script>
-      /** Renders our map */
-      async function createMap(start, end) {
-        const width = 1440;
-        const height = 900;
+    .country:hover {
+      stroke-width: 1.24px;
+      cursor: pointer;
+    }
 
-        const svg = d3
-          .select("#map")
-          .append("svg")
-          .attr("width", width)
-          .attr("height", height);
-        const colorScale = d3.scaleSequential(d3.interpolateGreens);
-        const tooltip = d3.select("#tooltip");
+    #tooltip {
+      padding: 8px 16px;
+      min-width: 124px;
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      background-color: #fff;
+      color: #000;
+      border-radius: 4px;
+      border-style: solid;
+      border-width: 1px;
+    }
 
-        // get our data
-        const imo_data = await d3.csv("country_imo_results.csv");
-        const world_data = await d3.json("countries-110m.json");
-        const edu_spending = await d3.csv("education_spending.csv");
+    #map-wrapper {
+      background-color: #fff;
+      position: relative;
+    }
 
-        // clean our data
-        imo_data.forEach((d) => {
-          if (d.country === "People's Republic of China") d.country = "China";
-          else if (d.country === "Russian Federation") d.country = "Russia";
-          else if (d.country === "Islamic Republic of Iran") d.country = "Iran";
-          else if (d.country === "Türkiye") d.country = "Turkey";
-          else if (d.country === "Czech Republic") d.country = "Czechia";
-          else if (d.country === "Bosnia and Herzegovina")
-            d.country = "Bosnia and Herz.";
-          else if (d.country === "Republic of Moldova") d.country = "Moldova";
-          else if (d.country === "North Macedonia") d.country = "Macedonia";
-          else if (d.country === "Republic of Korea") d.country = "South Korea";
-        });
+    #selected-decade {
+      margin-top: 16px;
+    }
+  </style>
+</head>
 
-        edu_spending.forEach((d) => {
-          if (d.country === "People's Republic of China") d.country = "China";
-          else if (d.country === "Russian Federation") d.country = "Russia";
-          else if (d.country === "Islamic Republic of Iran") d.country = "Iran";
-          else if (d.country === "Türkiye") d.country = "Turkey";
-          else if (d.country === "Czech Republic") d.country = "Czechia";
-          else if (d.country === "Bosnia and Herzegovina")
-            d.country = "Bosnia and Herz.";
-          else if (d.country === "Republic of Moldova") d.country = "Moldova";
-          else if (d.country === "North Macedonia") d.country = "Macedonia";
-          else if (d.country === "Republic of Korea") d.country = "South Korea";
-          else if (d.country === "United States")
-            d.country = "United States of America";
-        });
+<body>
+  <h1>International Math Olympiad Performance and Educational Expenditure by Country</h1>
+  <p>Elizabeth Moon (em652), William Zhang (wz282), Jiho Lee (jl4298)</p>
+  <p><i>Filter by decades below and hover over a country to see their gold, silver, and bronze medal count and spending
+      on education as a percentage of their GDP.</i></p>
+  <div id="buttons"></div>
+  <div id="selected-decade"></div>
+  <div id="map-wrapper">
+    <div id="map"></div>
+    <div id="tooltip"></div>
+  </div>
+  <script>
+    /** Renders our map */
+    async function createMap(start, end) {
+      const width = 1600;
+      const height = 1500;
 
-        const countries = topojson.feature(
-          world_data,
-          world_data.objects.countries
-        );
+      const svg = d3
+        .select("#map")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+      const colorScale = d3.scaleSequential(d3.interpolateGreens);
+      const tooltip = d3.select("#tooltip");
+      const selectedDecade = d3.select("#selected-decade");
+      selectedDecade.text(`Selected Years: ${start} - ${end}`);
 
-        const projection = d3.geoMercator().fitSize([width, height], countries);
+      // get our data
+      const imo_data = await d3.csv("country_imo_results.csv");
+      const world_data = await d3.json("countries-110m.json");
+      const edu_spending = await d3.csv("education_spending.csv");
 
-        const path = d3.geoPath().projection(projection);
-
-        // imo data => get total medal count per country
-        let medalCountMap = new Map();
-        let bronzes = new Map();
-        let silvers = new Map();
-        let golds = new Map();
-        function count(start, end) {
-          medalCountMap = new Map();
-          imo_data.forEach((d) => {
-            if (
-              d.year >= start &&
-              d.year <= end &&
-              d.country != "Democratic People's Republic of Korea"
-            ) {
-              const country = d.country;
-              const medals =
-                +d.awards_gold + +d.awards_silver + +d.awards_bronze;
-              medalCountMap.set(
-                country,
-                (medalCountMap.get(country) || 0) + medals
-              );
-              bronzes.set(
-                country,
-                (bronzes.get(country) || 0) + +d.awards_bronze
-              );
-              silvers.set(
-                country,
-                (silvers.get(country) || 0) + +d.awards_silver
-              );
-              golds.set(country, (golds.get(country) || 0) + +d.awards_gold);
-            }
-          });
-          // max medal count
-          const maxMedalCount = Math.max(...medalCountMap.values());
-          console.log(maxMedalCount);
-          // update our domain for our color scale
-          colorScale.domain([0, maxMedalCount]);
-        }
-        count(start, end);
-
-        // handle our education spending
-        // country | year (1960 - 2023)
-        const country_spending = new Map();
-        edu_spending.forEach((d) => {
-          let total_percentage = 0;
-          let non_nulls = 0;
-          for (let i = start; i <= end; i++) {
-            if (d[i]) non_nulls += 1;
-            total_percentage += +d[i] || 0;
-          }
-          const average = (total_percentage / non_nulls).toFixed(2);
-          country_spending.set(d.country, average);
-        });
-
-        function render() {
-          svg
-            .selectAll("path")
-            .data(countries.features)
-            .enter()
-            .append("path")
-            .attr("d", path)
-            .attr("class", "country")
-            .attr("fill", (d) => {
-              const medalCount = medalCountMap.get(d.properties.name);
-              return medalCount ? colorScale(medalCount) : "#ccc";
-            })
-            .on("mouseover", (event, d) => {
-              const name = d.properties.name;
-              const gold = golds.get(name) || 0;
-              const silver = silvers.get(name) || 0;
-              const bronze = bronzes.get(name) || 0;
-              const spending = country_spending.get(name) || "N/A";
-              tooltip
-                .html(
-                  `<strong> ${name} </strong> <br>
-              Gold: ${gold} <br> 
-              Silver: ${silver} <br> 
-              Bronze: ${bronze} <br> 
-              Education Expenditure (%GDP): ${spending}`
-                )
-                .style("left", event.pageX + 8 + "px")
-                .style("top", event.pageY - 8 + "px")
-                .style("opacity", 1);
-            })
-            .on("mouseout", () => tooltip.style("opacity", 0));
-        }
-        render();
-      }
-
-      createMap(1959, 2025);
-      const decades = [
-        { label: "1960s", start: 1960, end: 1969 },
-        { label: "1970s", start: 1970, end: 1979 },
-        { label: "1980s", start: 1980, end: 1989 },
-        { label: "1990s", start: 1990, end: 1999 },
-        { label: "2000s", start: 2000, end: 2009 },
-        { label: "2010s", start: 2010, end: 2019 },
-        { label: "2020s", start: 2020, end: 2024 },
-      ];
-      const buttonsContainer = d3.select("#buttons");
-      decades.forEach((decade) => {
-        buttonsContainer
-          .append("button")
-          .text(decade.label)
-          .on("click", () => {
-            d3.select("#map").html("");
-            console.log(`Rendering map for ${decade.label}`);
-            createMap(decade.start, decade.end);
-          });
+      // clean our data
+      imo_data.forEach((d) => {
+        if (d.country === "People's Republic of China") d.country = "China";
+        else if (d.country === "Russian Federation") d.country = "Russia";
+        else if (d.country === "Islamic Republic of Iran") d.country = "Iran";
+        else if (d.country === "Türkiye") d.country = "Turkey";
+        else if (d.country === "Czech Republic") d.country = "Czechia";
+        else if (d.country === "Bosnia and Herzegovina")
+          d.country = "Bosnia and Herz.";
+        else if (d.country === "Republic of Moldova") d.country = "Moldova";
+        else if (d.country === "North Macedonia") d.country = "Macedonia";
+        else if (d.country === "Republic of Korea") d.country = "South Korea";
       });
-    </script>
-  </body>
+
+      edu_spending.forEach((d) => {
+        if (d.country === "People's Republic of China") d.country = "China";
+        else if (d.country === "Russian Federation") d.country = "Russia";
+        else if (d.country === "Islamic Republic of Iran") d.country = "Iran";
+        else if (d.country === "Türkiye") d.country = "Turkey";
+        else if (d.country === "Czech Republic") d.country = "Czechia";
+        else if (d.country === "Bosnia and Herzegovina")
+          d.country = "Bosnia and Herz.";
+        else if (d.country === "Republic of Moldova") d.country = "Moldova";
+        else if (d.country === "North Macedonia") d.country = "Macedonia";
+        else if (d.country === "Republic of Korea") d.country = "South Korea";
+        else if (d.country === "United States")
+          d.country = "United States of America";
+      });
+
+      const countries = topojson.feature(
+        world_data,
+        world_data.objects.countries
+      );
+
+      const projection = d3.geoMercator().fitSize([width, height], countries);
+      const path = d3.geoPath().projection(projection);
+
+      // imo data => get total medal count per country
+      let medalCountMap = new Map();
+      let bronzes = new Map();
+      let silvers = new Map();
+      let golds = new Map();
+      function count(start, end) {
+        medalCountMap = new Map();
+        imo_data.forEach((d) => {
+          if (
+            d.year >= start &&
+            d.year <= end &&
+            d.country != "Democratic People's Republic of Korea"
+          ) {
+            const country = d.country;
+            const medals =
+              +d.awards_gold + +d.awards_silver + +d.awards_bronze;
+            medalCountMap.set(
+              country,
+              (medalCountMap.get(country) || 0) + medals
+            );
+            bronzes.set(
+              country,
+              (bronzes.get(country) || 0) + +d.awards_bronze
+            );
+            silvers.set(
+              country,
+              (silvers.get(country) || 0) + +d.awards_silver
+            );
+            golds.set(country, (golds.get(country) || 0) + +d.awards_gold);
+          }
+        });
+        // max medal count
+        const maxMedalCount = Math.max(...medalCountMap.values());
+        console.log(maxMedalCount);
+        // update our domain for our color scale
+        colorScale.domain([0, maxMedalCount]);
+      }
+      count(start, end);
+
+      // handle our education spending
+      // country | year (1960 - 2023)
+      const country_spending = new Map();
+      edu_spending.forEach((d) => {
+        let total_percentage = 0;
+        let non_nulls = 0;
+        for (let i = start; i <= end; i++) {
+          if (d[i]) non_nulls += 1;
+          total_percentage += +d[i] || 0;
+        }
+        const average = (total_percentage / non_nulls).toFixed(2);
+        country_spending.set(d.country, average);
+      });
+
+      function render() {
+        svg
+          .selectAll("path")
+          .data(countries.features)
+          .enter()
+          .append("path")
+          .attr("d", path)
+          .attr("class", "country")
+          .attr("fill", (d) => {
+            const medalCount = medalCountMap.get(d.properties.name);
+            return medalCount ? colorScale(medalCount) : "#ccc";
+          })
+          .on("mouseover", (event, d) => {
+            const name = d.properties.name;
+            const gold = golds.get(name) || 0;
+            const silver = silvers.get(name) || 0;
+            const bronze = bronzes.get(name) || 0;
+            const spending = country_spending.get(name) || "N/A";
+            tooltip
+              .html(
+                `<b>${name} </b> <br>
+              Gold 🥇: ${gold} <br> 
+              Silver 🥈: ${silver} <br> 
+              Bronze 🥉: ${bronze} <br> 
+              Education Expenditure (% of GDP): ${spending}`
+              )
+              .style("left", event.pageX + "px")
+              .style("top", event.pageY + "px")
+              .style("opacity", 1);
+          })
+          .on("mouseout", () => tooltip.style("opacity", 0));
+      }
+      render();
+    }
+
+    // initialize map with all time data
+    createMap(1959, 2024);
+
+    const decades = [
+      { label: "1960s", start: 1960, end: 1969 },
+      { label: "1970s", start: 1970, end: 1979 },
+      { label: "1980s", start: 1980, end: 1989 },
+      { label: "1990s", start: 1990, end: 1999 },
+      { label: "2000s", start: 2000, end: 2009 },
+      { label: "2010s", start: 2010, end: 2019 },
+      { label: "2020s", start: 2020, end: 2024 },
+      { label: "All Time", start: 1959, end: 2024 },
+    ];
+
+    // create buttons for year ranges
+    const buttonsContainer = d3.select("#buttons");
+    decades.forEach((decade) => {
+      buttonsContainer
+        .append("button")
+        .text(decade.label)
+        .on("click", () => {
+          d3.select("#map").html("");
+          console.log(`Rendering map for ${decade.label}`);
+          createMap(decade.start, decade.end);
+          selectedDecade.text(`Selected Decade: ${decade.label}`);
+        });
+    });
+  </script>
+</body>
+
 </html>
