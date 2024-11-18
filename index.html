@@ -178,13 +178,13 @@
             );
             bronzes.set(
               country,
-              (bronzes.get(country) || 0) + +d.awards_bronze
+              (bronzes.get(country) || 0) + (+d.awards_bronze || 0)
             );
             silvers.set(
               country,
-              (silvers.get(country) || 0) + +d.awards_silver
+              (silvers.get(country) || 0) + (+d.awards_silver || 0)
             );
-            golds.set(country, (golds.get(country) || 0) + +d.awards_gold);
+            golds.set(country, (golds.get(country) || 0) + (+d.awards_gold || 0));
           }
         });
         // max medal count
