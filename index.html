@@ -481,18 +481,14 @@
       }
 
       // initialize map with all time data
-      createMap(1959, 2024, team_female_prop);
+      createMap(1970, 2024, team_female_prop);
 
-      const decades = [
-        { label: "1960s", start: 1960, end: 1969 },
-        { label: "1970s", start: 1970, end: 1979 },
-        { label: "1980s", start: 1980, end: 1989 },
-        { label: "1990s", start: 1990, end: 1999 },
-        { label: "2000s", start: 2000, end: 2009 },
-        { label: "2010s", start: 2010, end: 2019 },
-        { label: "2020s", start: 2020, end: 2024 },
-        { label: "All Time", start: 1959, end: 2024 },
-      ];
+      const decades = [];
+      for (let start = 1970; start <= 2020; start += 10) {
+        const end = start + 9 > endYear ? endYear : start + 9;
+        decades.push({ label: `${start}s`, start, end });
+      }
+      decades.push({ label: "All Time", start: startYear, end: endYear });
 
       // create buttons for year ranges
       const buttonsContainer = d3.select("#buttons");
