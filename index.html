@@ -2,14 +2,24 @@
 <html lang="en">
   <head>
     <title>World IMO Visual</title>
-
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
     <!-- d3 + topojson -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
     <style>
       body {
-        font-family: Helvetica, sans-serif;
+        font-family: "Space Grotesk", sans-serif;
         margin-left: 16px;
+        padding: 20px;
+      }
+
+      .title-line {
+        border: none;
+        border-top: 2px solid #c7c7c7;
+        width: 100%;
       }
 
       #map {
@@ -67,65 +77,90 @@
       #selected-decade {
         margin-top: 16px;
       }
+
+      #left-container {
+        display: flex;
+        flex-direction: column;
+        margin-right: 40px;
+      }
+
+      #header-container {
+        display: flex;
+        flex-direction: row;
+      }
     </style>
   </head>
 
   <body>
-    <h1>
-      International Math Olympiad Performance and Educational Expenditure by
-      Country
-    </h1>
-    <p>Elizabeth Moon (em652), William Zhang (wz282), Jiho Lee (jl4298)</p>
-    <p>
-      This interactive data visualization aggregates data from two sources: a
-      dataset of International Math Olympiad (IMO) by country from 1959 to 2024,
-      and a dataset of countries' spending on education as a percentage of their
-      total GDP from 1960 to 2023. We chose to use a sequential color scale for
-      each country's fill on the map based on the total count of medals (gold,
-      silver, and bronze), and additionally chose to present information by
-      decade so the viewer can see the increase in participating countries and
-      their IMO performance over time.
-    </p>
-    <p>
-      Using these two data sources gives insight into how IMO performance may
-      correlate with the country's spending on education as a percentage of
-      their GDP, which can be a reflection of the importance placed on education
-      in that country. Presenting this information on a chloropleth map further
-      unites this information for the viewer and places it in a more familiar
-      visual context.
-    </p>
-    <p>
-      <i
-        >Filter by decades below and hover over a country to see its gold,
-        silver, and bronze medal count and spending on education as a percentage
-        of its GDP.</i
-      >
-    </p>
-    <div
-      style="display: flex; padding-right: 12px; gap: 12px; align-items: center"
-    >
-      <div id="buttons"></div>
-      <p>Minimum female proportion of team:</p>
-      <div class="slidecontainer">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value="0"
-          class="slider"
-          id="female-prop"
-        />
+    <div id="header-container">
+      <div id="left-container">
+        <h1>
+          International Math Olympiad Performance and Educational Expenditure by
+          Country
+        </h1>
+        <hr class="title-line" />
+        <p>Elizabeth Moon (em652), William Zhang (wz282), Jiho Lee (jl4298)</p>
+        <p>
+          This interactive data visualization aggregates data from two sources:
+          a dataset of International Math Olympiad (IMO) by country from 1959 to
+          2024, and a dataset of countries' spending on education as a
+          percentage of their total GDP from 1960 to 2023. We chose to use a
+          sequential color scale for each country's fill on the map based on the
+          total count of medals (gold, silver, and bronze), and additionally
+          chose to present information by decade so the viewer can see the
+          increase in participating countries and their IMO performance over
+          time.
+        </p>
+        <p>
+          Using these two data sources gives insight into how IMO performance
+          may correlate with the country's spending on education as a percentage
+          of their GDP, which can be a reflection of the importance placed on
+          education in that country. Presenting this information on a
+          chloropleth map further unites this information for the viewer and
+          places it in a more familiar visual context.
+        </p>
+        <p>
+          <i
+            >Filter by decades below and hover over a country to see its gold,
+            silver, and bronze medal count and spending on education as a
+            percentage of its GDP.</i
+          >
+        </p>
+        <div
+          style="
+            display: flex;
+            padding-right: 12px;
+            padding-bottom: 20px;
+            gap: 12px;
+            align-items: center;
+          "
+        >
+          <div id="buttons"></div>
+          <p>Minimum female proportion of team:</p>
+          <div class="slidecontainer">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="0"
+              class="slider"
+              id="female-prop"
+            />
+          </div>
+          <div id="slider-value"></div>
+        </div>
+        <div id="selected-decade"></div>
+        <div id="scatter-wrapper">
+          <h2>Country's Education Expenditure vs. IMO Medals</h2>
+          <div id="scatter-plot"></div>
+        </div>
       </div>
-      <div id="slider-value"></div>
-    </div>
-    <div id="selected-decade"></div>
-    <div id="tooltip"></div>
-    <div id="map-wrapper">
-      <div id="map"></div>
-    </div>
-    <div id="scatter-wrapper">
-      <h2>Country's Education Expenditure vs. IMO Medals</h2>
-      <div id="scatter-plot"></div>
+      <div id="viz-container">
+        <div id="tooltip"></div>
+        <div id="map-wrapper">
+          <div id="map"></div>
+        </div>
+      </div>
     </div>
     <script>
       const selectedDecade = d3.select("#selected-decade");
@@ -148,8 +183,8 @@
 
       /** Renders our map */
       async function createMap(start, end, team_female_prop) {
-        const width = 1600;
-        const height = 1500;
+        const width = 1200;
+        const height = 1100;
 
         const svg = d3
           .select("#map")
@@ -402,6 +437,7 @@
           .attr("y", 40)
           .attr("fill", "black")
           .style("text-anchor", "middle")
+          .style("font-size", "14px")
           .text("Education Spending (% of GDP)");
 
         svg
@@ -414,7 +450,8 @@
           .attr("fill", "black")
           .attr("transform", "rotate(-90)")
           .style("text-anchor", "middle")
-          .text("IMO Medals");
+          .style("font-size", "14px")
+          .text("Total IMO Medals");
 
         svg
           .selectAll("circle")
@@ -428,7 +465,7 @@
           .attr("opacity", 0.6)
           // interaction for countries and spending
           .on("mouseover", (event, d) => {
-            d3.select(event.target).style("opacity", 1);
+            d3.select(event.target).style("opacity", 1).attr("r", 8);
             tooltip
               .html(
                 `<b>${d.country}</b><br>Total Medals: ${d.medals}<br>Spending: ${d.spending}`
@@ -438,7 +475,7 @@
               .style("opacity", 1);
           })
           .on("mouseout", (event) => {
-            d3.select(event.target).style("opacity", 0.6);
+            d3.select(event.target).style("opacity", 0.6).attr("r", 5);
             tooltip.style("opacity", 0);
           });
       }
