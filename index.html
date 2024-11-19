@@ -84,7 +84,14 @@
     it in a more familiar visual context.</p>
   <p><i>Filter by decades below and hover over a country to see its gold, silver, and bronze medal count and spending
       on education as a percentage of its GDP.</i></p>
-  <div id="buttons"></div>
+  <div style="display: flex; padding-right: 12px; gap: 12px; align-items: center;">
+    <div id="buttons"></div>
+    <p>Minimum female proportion of team:</p>
+    <div class="slidecontainer">
+      <input type="range" min="0" max="100" value="0" class="slider" id="female-prop">
+    </div>
+    <div id="slider-value"></div>
+  </div>
   <div id="selected-decade"></div>
   <div id="map-wrapper">
     <div id="map"></div>
@@ -92,8 +99,23 @@
   </div>
   <script>
     const selectedDecade = d3.select("#selected-decade");
+    var team_female_prop = 0.0;
+    var slider = document.getElementById("female-prop");
+    var output = document.getElementById("slider-value");
+    output.innerHTML = slider.value;
+
+    var startYear = 1959;
+    var endYear = 2024;
+
+    slider.oninput = function () {
+      team_female_prop = this.value / 100.0;
+      output.innerHTML = team_female_prop;
+      d3.select("#map").html("");
+      createMap(startYear, endYear, team_female_prop);
+    }
+
     /** Renders our map */
-    async function createMap(start, end) {
+    async function createMap(start, end, team_female_prop) {
       const width = 1600;
       const height = 1500;
 
@@ -171,6 +193,9 @@
       let bronzes = new Map();
       let silvers = new Map();
       let golds = new Map();
+      let teamTotal = new Map();
+      let femaleTotal = new Map();
+
       function count(start, end) {
         medalCountMap = new Map();
         imo_data.forEach((d) => {
@@ -194,8 +219,28 @@
               (silvers.get(country) || 0) + (+d.awards_silver || 0)
             );
             golds.set(country, (golds.get(country) || 0) + (+d.awards_gold || 0));
+            teamTotal.set(
+              country,
+              (teamTotal.get(country) || 0) + (+d.team_size_all || 0)
+            );
+            femaleTotal.set(
+              country,
+              (femaleTotal.get(country) || 0) + (+d.team_size_female || 0)
+            )
           }
         });
+
+        // filter to countries where female team proportion is greater than the slider value
+        medalCountMap = new Map(
+          Array.from(medalCountMap).filter(([country, value]) => (femaleTotal.get(country) || 0) / (teamTotal.get(country) || 1) >= team_female_prop)
+        );
+        golds = new Map(
+          Array.from(golds).filter(([country, value]) => (femaleTotal.get(country) || 0) / (teamTotal.get(country) || 1) >= team_female_prop));
+        silvers = new Map(
+          Array.from(silvers).filter(([country, value]) => (femaleTotal.get(country) || 0) / (teamTotal.get(country) || 1) >= team_female_prop));
+        bronzes = new Map(
+          Array.from(bronzes).filter(([country, value]) => (femaleTotal.get(country) || 0) / (teamTotal.get(country) || 1) >= team_female_prop));
+
         // max medal count
         const maxMedalCount = Math.max(...medalCountMap.values());
         // update our domain for our color scale
@@ -255,7 +300,7 @@
     }
 
     // initialize map with all time data
-    createMap(1959, 2024);
+    createMap(1959, 2024, team_female_prop);
 
     const decades = [
       { label: "1960s", start: 1960, end: 1969 },
@@ -277,7 +322,7 @@
         .on("click", () => {
           d3.select("#map").html("");
           console.log(`Rendering map for ${decade.label}`);
-          createMap(decade.start, decade.end);
+          createMap(decade.start, decade.end, team_female_prop);
         });
     });
   </script>
