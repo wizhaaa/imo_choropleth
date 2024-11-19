@@ -10,8 +10,12 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
     <style>
-      body {
+      body,
+      button {
         font-family: "Space Grotesk", sans-serif;
+      }
+
+      #header-container {
         margin-left: 16px;
         padding: 20px;
       }
@@ -32,17 +36,18 @@
         background: none;
         padding: 10px 16px;
         cursor: pointer;
+        transition: background-color 0.4s ease, color 0s ease;
       }
 
       button:hover {
-        background: #fff;
-        color: #000;
+        background: rgb(0, 161, 161);
+        color: #ffffff;
         font-weight: 700;
       }
 
       button:active {
-        background: #000;
-        color: #fff;
+        background: #ffffff;
+        color: #b5b0b0;
       }
 
       .country {
@@ -335,11 +340,85 @@
           const maxMedalCount = Math.max(...medalCountMap.values());
           // update our domain for our color scale
           colorScale.domain([0, maxMedalCount]);
+
+          // create legend
+          const legendWidth = 500;
+          const legendHeight = 20;
+
+          // clear old legend
+          d3.select("#legend").remove();
+
+          const legendSvg = d3
+            .select("#map-wrapper")
+            .append("svg")
+            .attr("id", "legend")
+            .attr("width", legendWidth + 20)
+            .attr("height", 80)
+            .style("margin-top", "10px");
+
+          legendSvg
+            .append("text")
+            .attr("x", legendWidth / 2 + 10)
+            .attr("y", 10)
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+            .text("Medal Count");
+
+          const defs = legendSvg.append("defs");
+
+          const gradient = defs
+            .append("linearGradient")
+            .attr("id", "legend-gradient")
+            .attr("x1", "0%")
+            .attr("x2", "100%")
+            .attr("y1", "0%")
+            .attr("y2", "0%");
+
+          // color stops
+          const gradientStops = colorScale.ticks(10).map((d) => ({
+            offset: `${
+              ((d - colorScale.domain()[0]) /
+                (colorScale.domain()[1] - colorScale.domain()[0])) *
+              100
+            }%`,
+            color: colorScale(d),
+          }));
+
+          gradientStops.forEach(({ offset, color }) => {
+            gradient
+              .append("stop")
+              .attr("offset", offset)
+              .attr("stop-color", color);
+          });
+
+          legendSvg
+            .append("rect")
+            .attr("x", 10)
+            .attr("y", 20)
+            .attr("width", legendWidth)
+            .attr("height", legendHeight)
+            .style("fill", "url(#legend-gradient)");
+
+          const legendScale = d3
+            .scaleLinear()
+            .domain(colorScale.domain())
+            .range([0, legendWidth]);
+
+          legendSvg
+            .append("g")
+            .attr("transform", `translate(10,${legendHeight + 30})`)
+            .call(d3.axisBottom(legendScale).ticks(10))
+            .call((g) =>
+              g
+                .selectAll("text")
+                .style("font-size", "12px")
+                .style("text-anchor", "middle")
+            );
         }
         count(start, end);
 
         // handle our education spending
-        // country | year (1960 - 2023)
+        // country | year (1970 - 2023)
         const country_spending = new Map();
         edu_spending.forEach((d) => {
           let total_percentage = 0;
@@ -375,10 +454,10 @@
               tooltip
                 .html(
                   `<b>${name} </b> <br>
-              Gold 🥇: ${gold} <br> 
-              Silver 🥈: ${silver} <br> 
-              Bronze 🥉: ${bronze} <br> 
-              Education Expenditure (% of GDP): ${spending}`
+                    Gold 🥇: ${gold} <br>
+                    Silver 🥈: ${silver} <br>
+                    Bronze 🥉: ${bronze} <br>
+                    Education Expenditure (% of GDP): ${spending}`
                 )
                 .style("left", `${event.clientX}px`)
                 .style("top", `${event.clientY}px`)
