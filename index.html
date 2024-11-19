@@ -102,28 +102,29 @@
         <p>Elizabeth Moon (em652), William Zhang (wz282), Jiho Lee (jl4298)</p>
         <p>
           This interactive data visualization aggregates data from two sources:
-          a dataset of International Math Olympiad (IMO) by country from 1959 to
-          2024, and a dataset of countries' spending on education as a
-          percentage of their total GDP from 1960 to 2023. We chose to use a
-          sequential color scale for each country's fill on the map based on the
-          total count of medals (gold, silver, and bronze), and additionally
-          chose to present information by decade so the viewer can see the
-          increase in participating countries and their IMO performance over
-          time.
+          a dataset of International Math Olympiad (IMO) by country, and
+          countries' spending on education as a percentage of their total GDP
+          across decades. We chose to use a sequential color scale for each
+          country's fill on the map based on the total count of medals (gold,
+          silver, and bronze), and additionally chose to present information by
+          decade so the viewer can see the increase in participating countries
+          and their IMO performance over time.
         </p>
         <p>
-          Using these two data sources gives insight into how IMO performance
-          may correlate with the country's spending on education as a percentage
-          of their GDP, which can be a reflection of the importance placed on
+          The scatterplot shown below gives insight into how IMO performance may
+          correlate with the country's spending on education as a percentage of
+          their GDP, which can be a reflection of the importance placed on
           education in that country. Presenting this information on a
           chloropleth map further unites this information for the viewer and
           places it in a more familiar visual context.
         </p>
         <p>
           <i
-            >Filter by decades below and hover over a country to see its gold,
-            silver, and bronze medal count and spending on education as a
-            percentage of its GDP.</i
+            >Filter by decades and/or proportion of females within a team. Hover
+            over a country to see its gold, silver, and bronze medal count and
+            spending on education as a percentage of its GDP. Hover over a point
+            in the scatterplot to see country and total medal count for that
+            decade.</i
           >
         </p>
         <div
@@ -171,7 +172,7 @@
 
       const tooltip = d3.select("#tooltip");
 
-      var startYear = 1959;
+      var startYear = 1970;
       var endYear = 2024;
 
       slider.oninput = function () {
