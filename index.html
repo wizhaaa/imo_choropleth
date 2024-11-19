@@ -1,331 +1,475 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <title>World IMO Visual</title>
 
-<head>
-  <title>World IMO Visual</title>
+    <!-- d3 + topojson -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <style>
+      body {
+        font-family: Helvetica, sans-serif;
+        margin-left: 16px;
+      }
 
-  <!-- d3 + topojson -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://d3js.org/topojson.v3.min.js"></script>
-  <style>
-    body {
-      font-family: Helvetica, sans-serif;
-      margin-left: 16px;
-    }
+      #map {
+        background-color: #fff;
+      }
 
-    #map {
-      background-color: #fff;
-    }
+      button {
+        border: 1px solid #000;
+        color: #000;
+        background: none;
+        padding: 10px 16px;
+        cursor: pointer;
+      }
 
-    button {
-      border: 1px solid #000;
-      color: #000;
-      background: none;
-      padding: 10px 16px;
-      cursor: pointer;
-    }
+      button:hover {
+        background: #fff;
+        color: #000;
+        font-weight: 700;
+      }
 
-    button:hover {
-      background: #fff;
-      color: #000;
-      font-weight: 700;
-    }
+      button:active {
+        background: #000;
+        color: #fff;
+      }
 
-    button:active {
-      background: #000;
-      color: #fff;
-    }
+      .country {
+        stroke: #000;
+        stroke-width: 0.16px;
+      }
 
-    .country {
-      stroke: #000;
-      stroke-width: 0.16px;
-    }
+      .country:hover {
+        stroke-width: 1.24px;
+        cursor: pointer;
+      }
 
-    .country:hover {
-      stroke-width: 1.24px;
-      cursor: pointer;
-    }
+      #tooltip {
+        padding: 8px 16px;
+        z-index: 1000;
+        min-width: 124px;
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        background-color: #fff;
+        color: #000;
+        border-radius: 4px;
+        border-style: solid;
+        border-width: 1px;
+      }
 
-    #tooltip {
-      padding: 8px 16px;
-      min-width: 124px;
-      position: absolute;
-      opacity: 0;
-      pointer-events: none;
-      background-color: #fff;
-      color: #000;
-      border-radius: 4px;
-      border-style: solid;
-      border-width: 1px;
-    }
+      #map-wrapper {
+        background-color: #fff;
+        position: relative;
+      }
 
-    #map-wrapper {
-      background-color: #fff;
-      position: relative;
-    }
+      #selected-decade {
+        margin-top: 16px;
+      }
+    </style>
+  </head>
 
-    #selected-decade {
-      margin-top: 16px;
-    }
-  </style>
-</head>
-
-<body>
-  <h1>International Math Olympiad Performance and Educational Expenditure by Country</h1>
-  <p>Elizabeth Moon (em652), William Zhang (wz282), Jiho Lee (jl4298)</p>
-  <p>This interactive data visualization aggregates data from two sources: a dataset of International Math Olympiad
-    (IMO) by country from 1959 to 2024, and a dataset of countries' spending on education as a percentage of their total
-    GDP from 1960 to 2023. We chose to use a sequential color scale for each country's fill on the map based on the
-    total count of medals (gold, silver, and bronze), and additionally chose to present information by decade so the
-    viewer can see the increase in participating countries and their IMO performance over time.</p>
-  <p>Using these two data sources gives insight into how IMO performance may correlate with the country's spending on
-    education as a percentage of their GDP, which can be a reflection of the importance placed on education in that
-    country. Presenting this information on a chloropleth map further unites this information for the viewer and places
-    it in a more familiar visual context.</p>
-  <p><i>Filter by decades below and hover over a country to see its gold, silver, and bronze medal count and spending
-      on education as a percentage of its GDP.</i></p>
-  <div style="display: flex; padding-right: 12px; gap: 12px; align-items: center;">
-    <div id="buttons"></div>
-    <p>Minimum female proportion of team:</p>
-    <div class="slidecontainer">
-      <input type="range" min="0" max="100" value="0" class="slider" id="female-prop">
+  <body>
+    <h1>
+      International Math Olympiad Performance and Educational Expenditure by
+      Country
+    </h1>
+    <p>Elizabeth Moon (em652), William Zhang (wz282), Jiho Lee (jl4298)</p>
+    <p>
+      This interactive data visualization aggregates data from two sources: a
+      dataset of International Math Olympiad (IMO) by country from 1959 to 2024,
+      and a dataset of countries' spending on education as a percentage of their
+      total GDP from 1960 to 2023. We chose to use a sequential color scale for
+      each country's fill on the map based on the total count of medals (gold,
+      silver, and bronze), and additionally chose to present information by
+      decade so the viewer can see the increase in participating countries and
+      their IMO performance over time.
+    </p>
+    <p>
+      Using these two data sources gives insight into how IMO performance may
+      correlate with the country's spending on education as a percentage of
+      their GDP, which can be a reflection of the importance placed on education
+      in that country. Presenting this information on a chloropleth map further
+      unites this information for the viewer and places it in a more familiar
+      visual context.
+    </p>
+    <p>
+      <i
+        >Filter by decades below and hover over a country to see its gold,
+        silver, and bronze medal count and spending on education as a percentage
+        of its GDP.</i
+      >
+    </p>
+    <div
+      style="display: flex; padding-right: 12px; gap: 12px; align-items: center"
+    >
+      <div id="buttons"></div>
+      <p>Minimum female proportion of team:</p>
+      <div class="slidecontainer">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="0"
+          class="slider"
+          id="female-prop"
+        />
+      </div>
+      <div id="slider-value"></div>
     </div>
-    <div id="slider-value"></div>
-  </div>
-  <div id="selected-decade"></div>
-  <div id="map-wrapper">
-    <div id="map"></div>
+    <div id="selected-decade"></div>
     <div id="tooltip"></div>
-  </div>
-  <script>
-    const selectedDecade = d3.select("#selected-decade");
-    var team_female_prop = 0.0;
-    var slider = document.getElementById("female-prop");
-    var output = document.getElementById("slider-value");
-    output.innerHTML = slider.value;
+    <div id="map-wrapper">
+      <div id="map"></div>
+    </div>
+    <div id="scatter-wrapper">
+      <h2>Country's Education Expenditure vs. IMO Medals</h2>
+      <div id="scatter-plot"></div>
+    </div>
+    <script>
+      const selectedDecade = d3.select("#selected-decade");
+      var team_female_prop = 0.0;
+      var slider = document.getElementById("female-prop");
+      var output = document.getElementById("slider-value");
+      output.innerHTML = slider.value;
 
-    var startYear = 1959;
-    var endYear = 2024;
-
-    slider.oninput = function () {
-      team_female_prop = this.value / 100.0;
-      output.innerHTML = team_female_prop;
-      d3.select("#map").html("");
-      createMap(startYear, endYear, team_female_prop);
-    }
-
-    /** Renders our map */
-    async function createMap(start, end, team_female_prop) {
-      const width = 1600;
-      const height = 1500;
-
-      const svg = d3
-        .select("#map")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
-      const colorScale = d3.scaleSequential(d3.interpolateGreens);
       const tooltip = d3.select("#tooltip");
-      selectedDecade.text(`Selected Years: ${start} - ${end}`);
 
-      // get our data
-      const imo_data = await d3.csv("country_imo_results.csv");
-      const world_data = await d3.json("countries-110m.json");
-      const edu_spending = await d3.csv("education_spending.csv");
+      var startYear = 1959;
+      var endYear = 2024;
 
-      // map from IMO data country name to world data country name
-      const imo_countries_clean = {
-        "People's Republic of China": "China",
-        "Russian Federation": "Russia",
-        "Islamic Republic of Iran": "Iran",
-        "Türkiye": "Turkey",
-        "Czech Republic": "Czechia",
-        "Bosnia and Herzegovina": "Bosnia and Herz.",
-        "Republic of Moldova": "Moldova",
-        "North Macedonia": "Macedonia",
-        "Republic of Korea": "South Korea",
-        "Democratic People's Republic of Korea": "North Korea",
-      }
+      slider.oninput = function () {
+        team_female_prop = this.value / 100.0;
+        output.innerHTML = team_female_prop;
+        d3.select("#map").html("");
+        createMap(startYear, endYear, team_female_prop);
+      };
 
-      // map from education spending data country name to world data country name
-      const edu_countries_clean = {
-        "People's Republic of China": "China",
-        "Russian Federation": "Russia",
-        "Iran, Islamic Rep.": "Iran",
-        "Turkiye": "Turkey",
-        "Bosnia and Herzegovina": "Bosnia and Herz.",
-        "Republic of Moldova": "Moldova",
-        "North Macedonia": "Macedonia",
-        "Korea, Rep.": "South Korea",
-        "Viet Nam": "Vietnam",
-        "Slovak Republic": "Slovakia",
-        "United States": "United States of America",
-        "Congo, Dem. Rep.": "Dem. Rep. Congo",
-        "Central African Republic": "Central African Rep.",
-        "Congo, Rep.": "Congo",
-        "Lao PDR": "Laos",
-        "Brunei Darussalam": "Brunei",
-        "Egypt, Arab Rep.": "Egypt",
-        "South Sudan": "S. Sudan",
-        "Dominican Republic": "Dominican Rep.",
-        "Venezuela, RB": "Venezuela",
-      }
+      /** Renders our map */
+      async function createMap(start, end, team_female_prop) {
+        const width = 1600;
+        const height = 1500;
 
-      // clean our data
-      imo_data.forEach((d) => {
-        d.country = imo_countries_clean[d.country] || d.country;
-      });
+        const svg = d3
+          .select("#map")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height);
+        const colorScale = d3.scaleSequential(d3.interpolateGreens);
+        selectedDecade.text(`Selected Years: ${start} - ${end}`);
 
-      edu_spending.forEach((d) => {
-        d.country = edu_countries_clean[d.country] || d.country;
-      });
+        // get our data
+        const imo_data = await d3.csv("country_imo_results.csv");
+        const world_data = await d3.json("countries-110m.json");
+        const edu_spending = await d3.csv("education_spending.csv");
 
-      const countries = topojson.feature(
-        world_data,
-        world_data.objects.countries
-      );
+        // map from IMO data country name to world data country name
+        const imo_countries_clean = {
+          "People's Republic of China": "China",
+          "Russian Federation": "Russia",
+          "Islamic Republic of Iran": "Iran",
+          Türkiye: "Turkey",
+          "Czech Republic": "Czechia",
+          "Bosnia and Herzegovina": "Bosnia and Herz.",
+          "Republic of Moldova": "Moldova",
+          "North Macedonia": "Macedonia",
+          "Republic of Korea": "South Korea",
+          "Democratic People's Republic of Korea": "North Korea",
+        };
 
-      const projection = d3.geoMercator().fitSize([width, height], countries);
-      const path = d3.geoPath().projection(projection);
+        // map from education spending data country name to world data country name
+        const edu_countries_clean = {
+          "People's Republic of China": "China",
+          "Russian Federation": "Russia",
+          "Iran, Islamic Rep.": "Iran",
+          Turkiye: "Turkey",
+          "Bosnia and Herzegovina": "Bosnia and Herz.",
+          "Republic of Moldova": "Moldova",
+          "North Macedonia": "Macedonia",
+          "Korea, Rep.": "South Korea",
+          "Viet Nam": "Vietnam",
+          "Slovak Republic": "Slovakia",
+          "United States": "United States of America",
+          "Congo, Dem. Rep.": "Dem. Rep. Congo",
+          "Central African Republic": "Central African Rep.",
+          "Congo, Rep.": "Congo",
+          "Lao PDR": "Laos",
+          "Brunei Darussalam": "Brunei",
+          "Egypt, Arab Rep.": "Egypt",
+          "South Sudan": "S. Sudan",
+          "Dominican Republic": "Dominican Rep.",
+          "Venezuela, RB": "Venezuela",
+        };
 
-      // imo data => get total medal count per country
-      let medalCountMap = new Map();
-      let bronzes = new Map();
-      let silvers = new Map();
-      let golds = new Map();
-      let teamTotal = new Map();
-      let femaleTotal = new Map();
-
-      function count(start, end) {
-        medalCountMap = new Map();
+        // clean our data
         imo_data.forEach((d) => {
-          if (
-            d.year >= start &&
-            d.year <= end
-          ) {
-            const country = d.country;
-            const medals =
-              (+d.awards_gold + +d.awards_silver + +d.awards_bronze) || 0;
-            medalCountMap.set(
-              country,
-              (medalCountMap.get(country) || 0) + medals
-            );
-            bronzes.set(
-              country,
-              (bronzes.get(country) || 0) + (+d.awards_bronze || 0)
-            );
-            silvers.set(
-              country,
-              (silvers.get(country) || 0) + (+d.awards_silver || 0)
-            );
-            golds.set(country, (golds.get(country) || 0) + (+d.awards_gold || 0));
-            teamTotal.set(
-              country,
-              (teamTotal.get(country) || 0) + (+d.team_size_all || 0)
-            );
-            femaleTotal.set(
-              country,
-              (femaleTotal.get(country) || 0) + (+d.team_size_female || 0)
+          d.country = imo_countries_clean[d.country] || d.country;
+        });
+
+        edu_spending.forEach((d) => {
+          d.country = edu_countries_clean[d.country] || d.country;
+        });
+
+        const countries = topojson.feature(
+          world_data,
+          world_data.objects.countries
+        );
+
+        const projection = d3.geoMercator().fitSize([width, height], countries);
+        const path = d3.geoPath().projection(projection);
+
+        // imo data => get total medal count per country
+        let medalCountMap = new Map();
+        let bronzes = new Map();
+        let silvers = new Map();
+        let golds = new Map();
+        let teamTotal = new Map();
+        let femaleTotal = new Map();
+
+        function count(start, end) {
+          medalCountMap = new Map();
+          imo_data.forEach((d) => {
+            if (d.year >= start && d.year <= end) {
+              const country = d.country;
+              const medals =
+                +d.awards_gold + +d.awards_silver + +d.awards_bronze || 0;
+              medalCountMap.set(
+                country,
+                (medalCountMap.get(country) || 0) + medals
+              );
+              bronzes.set(
+                country,
+                (bronzes.get(country) || 0) + (+d.awards_bronze || 0)
+              );
+              silvers.set(
+                country,
+                (silvers.get(country) || 0) + (+d.awards_silver || 0)
+              );
+              golds.set(
+                country,
+                (golds.get(country) || 0) + (+d.awards_gold || 0)
+              );
+              teamTotal.set(
+                country,
+                (teamTotal.get(country) || 0) + (+d.team_size_all || 0)
+              );
+              femaleTotal.set(
+                country,
+                (femaleTotal.get(country) || 0) + (+d.team_size_female || 0)
+              );
+            }
+          });
+
+          // filter to countries where female team proportion is greater than the slider value
+          medalCountMap = new Map(
+            Array.from(medalCountMap).filter(
+              ([country, value]) =>
+                (femaleTotal.get(country) || 0) /
+                  (teamTotal.get(country) || 1) >=
+                team_female_prop
             )
+          );
+          golds = new Map(
+            Array.from(golds).filter(
+              ([country, value]) =>
+                (femaleTotal.get(country) || 0) /
+                  (teamTotal.get(country) || 1) >=
+                team_female_prop
+            )
+          );
+          silvers = new Map(
+            Array.from(silvers).filter(
+              ([country, value]) =>
+                (femaleTotal.get(country) || 0) /
+                  (teamTotal.get(country) || 1) >=
+                team_female_prop
+            )
+          );
+          bronzes = new Map(
+            Array.from(bronzes).filter(
+              ([country, value]) =>
+                (femaleTotal.get(country) || 0) /
+                  (teamTotal.get(country) || 1) >=
+                team_female_prop
+            )
+          );
+
+          // max medal count
+          const maxMedalCount = Math.max(...medalCountMap.values());
+          // update our domain for our color scale
+          colorScale.domain([0, maxMedalCount]);
+        }
+        count(start, end);
+
+        // handle our education spending
+        // country | year (1960 - 2023)
+        const country_spending = new Map();
+        edu_spending.forEach((d) => {
+          let total_percentage = 0;
+          let non_nulls = 0;
+          for (let i = start; i <= end; i++) {
+            if (d[i]) non_nulls += 1;
+            total_percentage += +d[i] || 0;
+          }
+          if (non_nulls !== 0) {
+            const average = (total_percentage / non_nulls).toFixed(2);
+            country_spending.set(d.country, average);
           }
         });
 
-        // filter to countries where female team proportion is greater than the slider value
-        medalCountMap = new Map(
-          Array.from(medalCountMap).filter(([country, value]) => (femaleTotal.get(country) || 0) / (teamTotal.get(country) || 1) >= team_female_prop)
-        );
-        golds = new Map(
-          Array.from(golds).filter(([country, value]) => (femaleTotal.get(country) || 0) / (teamTotal.get(country) || 1) >= team_female_prop));
-        silvers = new Map(
-          Array.from(silvers).filter(([country, value]) => (femaleTotal.get(country) || 0) / (teamTotal.get(country) || 1) >= team_female_prop));
-        bronzes = new Map(
-          Array.from(bronzes).filter(([country, value]) => (femaleTotal.get(country) || 0) / (teamTotal.get(country) || 1) >= team_female_prop));
-
-        // max medal count
-        const maxMedalCount = Math.max(...medalCountMap.values());
-        // update our domain for our color scale
-        colorScale.domain([0, maxMedalCount]);
-      }
-      count(start, end);
-
-      // handle our education spending
-      // country | year (1960 - 2023)
-      const country_spending = new Map();
-      edu_spending.forEach((d) => {
-        let total_percentage = 0;
-        let non_nulls = 0;
-        for (let i = start; i <= end; i++) {
-          if (d[i]) non_nulls += 1;
-          total_percentage += +d[i] || 0;
-        }
-        if (non_nulls !== 0) {
-          const average = (total_percentage / non_nulls).toFixed(2);
-          country_spending.set(d.country, average);
-        }
-      });
-
-      function render() {
-        svg
-          .selectAll("path")
-          .data(countries.features)
-          .enter()
-          .append("path")
-          .attr("d", path)
-          .attr("class", "country")
-          .attr("fill", (d) => {
-            const medalCount = medalCountMap.get(d.properties.name);
-            return medalCount ? colorScale(medalCount) : "#ccc";
-          })
-          .on("mouseover", (event, d) => {
-            const name = d.properties.name;
-            const gold = golds.get(name) || 0;
-            const silver = silvers.get(name) || 0;
-            const bronze = bronzes.get(name) || 0;
-            const spending = country_spending.get(name) || "N/A";
-            tooltip
-              .html(
-                `<b>${name} </b> <br>
+        function render() {
+          svg
+            .selectAll("path")
+            .data(countries.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("class", "country")
+            .attr("fill", (d) => {
+              const medalCount = medalCountMap.get(d.properties.name);
+              return medalCount ? colorScale(medalCount) : "#ccc";
+            })
+            .on("mouseover", (event, d) => {
+              const name = d.properties.name;
+              const gold = golds.get(name) || 0;
+              const silver = silvers.get(name) || 0;
+              const bronze = bronzes.get(name) || 0;
+              const spending = country_spending.get(name) || "N/A";
+              tooltip
+                .html(
+                  `<b>${name} </b> <br>
               Gold 🥇: ${gold} <br> 
               Silver 🥈: ${silver} <br> 
               Bronze 🥉: ${bronze} <br> 
               Education Expenditure (% of GDP): ${spending}`
+                )
+                .style("left", `${event.clientX}px`)
+                .style("top", `${event.clientY}px`)
+                .style("opacity", 1);
+            })
+            .on("mouseout", () => tooltip.style("opacity", 0));
+        }
+        render();
+        renderScatterPlot(medalCountMap, country_spending);
+      }
+
+      function renderScatterPlot(medalCountMap, spendingMap) {
+        // educational expenditure plot
+        const scatterData = Array.from(medalCountMap.entries()).map(
+          ([country, medals]) => ({
+            country,
+            medals,
+            spending: spendingMap.get(country) || 0,
+          })
+        );
+        // clear last plot
+        d3.select("#scatter-plot").html("");
+        console.log(
+          "clear scatter plot and re-rendering w/ decade data:",
+          scatterData
+        );
+
+        const width = 1200;
+        const height = 600;
+        const margin = { top: 20, right: 30, bottom: 50, left: 60 };
+
+        const svg = d3
+          .select("#scatter-plot")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height);
+
+        const xScale = d3
+          .scaleLinear()
+          .domain([0, d3.max(scatterData, (d) => d.spending)])
+          .range([margin.left, width - margin.right]);
+
+        const yScale = d3
+          .scaleLinear()
+          .domain([0, d3.max(scatterData, (d) => d.medals)])
+          .range([height - margin.bottom, margin.top]);
+
+        const xAxis = d3.axisBottom(xScale).ticks(10);
+        const yAxis = d3.axisLeft(yScale).ticks(10);
+
+        svg
+          .append("g")
+          .attr("transform", `translate(0,${height - margin.bottom})`)
+          .call(xAxis)
+          .append("text")
+          .attr("x", width / 2)
+          .attr("y", 40)
+          .attr("fill", "black")
+          .style("text-anchor", "middle")
+          .text("Education Spending (% of GDP)");
+
+        svg
+          .append("g")
+          .attr("transform", `translate(${margin.left},0)`)
+          .call(yAxis)
+          .append("text")
+          .attr("x", -height / 2)
+          .attr("y", -40)
+          .attr("fill", "black")
+          .attr("transform", "rotate(-90)")
+          .style("text-anchor", "middle")
+          .text("IMO Medals");
+
+        svg
+          .selectAll("circle")
+          .data(scatterData)
+          .enter()
+          .append("circle")
+          .attr("cx", (d) => xScale(d.spending))
+          .attr("cy", (d) => yScale(d.medals))
+          .attr("r", 5)
+          .attr("fill", "teal")
+          .attr("opacity", 0.6)
+          // interaction for countries and spending
+          .on("mouseover", (event, d) => {
+            d3.select(event.target).style("opacity", 1);
+            tooltip
+              .html(
+                `<b>${d.country}</b><br>Total Medals: ${d.medals}<br>Spending: ${d.spending}`
               )
-              .style("left", `${event.clientX}px`)
-              .style("top", `${event.clientY}px`)
+              .style("left", `${event.pageX}px`)
+              .style("top", `${event.pageY}px`)
               .style("opacity", 1);
           })
-          .on("mouseout", () => tooltip.style("opacity", 0));
+          .on("mouseout", (event) => {
+            d3.select(event.target).style("opacity", 0.6);
+            tooltip.style("opacity", 0);
+          });
       }
-      render();
-    }
 
-    // initialize map with all time data
-    createMap(1959, 2024, team_female_prop);
+      // initialize map with all time data
+      createMap(1959, 2024, team_female_prop);
 
-    const decades = [
-      { label: "1960s", start: 1960, end: 1969 },
-      { label: "1970s", start: 1970, end: 1979 },
-      { label: "1980s", start: 1980, end: 1989 },
-      { label: "1990s", start: 1990, end: 1999 },
-      { label: "2000s", start: 2000, end: 2009 },
-      { label: "2010s", start: 2010, end: 2019 },
-      { label: "2020s", start: 2020, end: 2024 },
-      { label: "All Time", start: 1959, end: 2024 },
-    ];
+      const decades = [
+        { label: "1960s", start: 1960, end: 1969 },
+        { label: "1970s", start: 1970, end: 1979 },
+        { label: "1980s", start: 1980, end: 1989 },
+        { label: "1990s", start: 1990, end: 1999 },
+        { label: "2000s", start: 2000, end: 2009 },
+        { label: "2010s", start: 2010, end: 2019 },
+        { label: "2020s", start: 2020, end: 2024 },
+        { label: "All Time", start: 1959, end: 2024 },
+      ];
 
-    // create buttons for year ranges
-    const buttonsContainer = d3.select("#buttons");
-    decades.forEach((decade) => {
-      buttonsContainer
-        .append("button")
-        .text(decade.label)
-        .on("click", () => {
-          d3.select("#map").html("");
-          console.log(`Rendering map for ${decade.label}`);
-          createMap(decade.start, decade.end, team_female_prop);
-        });
-    });
-  </script>
-</body>
-
+      // create buttons for year ranges
+      const buttonsContainer = d3.select("#buttons");
+      decades.forEach((decade) => {
+        buttonsContainer
+          .append("button")
+          .text(decade.label)
+          .on("click", () => {
+            d3.select("#map").html("");
+            d3.select("#scatter-plot").html("");
+            console.log(`Rendering map for ${decade.label}`);
+            createMap(decade.start, decade.end, team_female_prop);
+          });
+      });
+    </script>
+  </body>
 </html>
